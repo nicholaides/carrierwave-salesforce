@@ -3,11 +3,11 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 describe CarrierWave::Storage::Salesforce do
   before do
     @uploader = mock('an uploader',
-      :username       => ENV['SF_USERNAME'],
-      :password       => ENV['SF_PASSWORD'],
-      :folder_id      => ENV['SF_FOLDERID'],
-      :store_path     => 'uploads/somefile/test.txt',
-      :perform_upload => nil
+      :sf_username       => ENV['SF_USERNAME'],
+      :sf_password       => ENV['SF_PASSWORD'],
+      :sf_folder_id      => ENV['SF_FOLDERID'],
+      :store_path        => 'uploads/somefile/test.txt',
+      :sf_perform_upload => nil
     )
     
     @storage = CarrierWave::Storage::Salesforce.new(@uploader)
@@ -35,7 +35,7 @@ describe CarrierWave::Storage::Salesforce do
     context "uploading immediately" do
       it "should upload immediately" do
         @uploader.stub!(
-          :perform_upload =>
+          :sf_perform_upload =>
             lambda do |uploader_class, perform_upload_method, username, password, document_id, file_path, sf_binding|
               uploader_class.send(perform_upload_method, username, password, document_id, file_path, sf_binding)
             end
@@ -49,7 +49,7 @@ describe CarrierWave::Storage::Salesforce do
     
     context "not uploading immediately" do
       it "should not upload immediately" do
-        @uploader.stub!(:perform_upload => lambda{})
+        @uploader.stub!(:sf_perform_upload => lambda{})
         
         @sf_file = @storage.store!(@file)
         @sf_file.read.should == "waiting for upload..."
@@ -64,5 +64,19 @@ describe CarrierWave::Storage::Salesforce do
     lambda{
       CarrierWave::Storage::Salesforce::File.new(@uploader, @sf_file.document_id).read
     }.should raise_error(CarrierWave::Storage::Salesforce::File::DocumentNotFound)
+  end
+  
+  it "should add configuration to the uploader" do
+    CarrierWave::Uploader::Base.configure do |config|
+      config.sf_username       = "user"
+      config.sf_password       = "pass"
+      config.sf_folder_id      = "folder"
+      config.sf_perform_upload = lambda{}
+      
+      config.sf_username      .should == "user"
+      config.sf_password      .should == "pass"
+      config.sf_folder_id     .should == "folder"
+      config.sf_perform_upload.should == lambda{}
+    end
   end
 end

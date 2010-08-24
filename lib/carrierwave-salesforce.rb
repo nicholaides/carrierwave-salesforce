@@ -23,7 +23,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     end
     
     def folder_id
-      @uploader.folder_id
+      @uploader.sf_folder_id
     end
     
     def read
@@ -44,17 +44,17 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
         :Body     => Base64.encode64("waiting for upload..."),
         :Type     => ::File.extname(@uploader.store_path),
         :Name     => ::File.basename(@uploader.store_path),
-        :FolderId => @uploader.folder_id
+        :FolderId => @uploader.sf_folder_id
       )
       creation_response = @sf_binding.create(blank_document)
 
       @document_id = creation_response.createResponse.result[:id]
 
-      upload_params = CarrierWave::Storage::Salesforce, :perform_upload, @uploader.username, @uploader.password, @document_id, file.path, @sf_binding
+      upload_params = [CarrierWave::Storage::Salesforce, :perform_upload, @uploader.sf_username, @uploader.sf_password, @document_id, file.path, @sf_binding]
       
-      if @uploader.perform_upload
+      if @uploader.sf_perform_upload
         # if they set perform_upload, then call that
-        @uploader.perform_upload[*upload_params]
+        @uploader.sf_perform_upload[*upload_params]
       else
         # otherwise, perform the upload right now
         klass, *upload_params = upload_params
@@ -64,7 +64,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     
     private
       def login
-        @sf_binding ||= CarrierWave::Storage::Salesforce.login(@uploader.username, @uploader.password)
+        @sf_binding ||= CarrierWave::Storage::Salesforce.login(@uploader.sf_username, @uploader.sf_password)
       end
     
       def download
@@ -110,4 +110,11 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     sf_binding ||= login(user, pass)
     sf_binding.update sobject("Document", document_id, :Body => Base64.encode64(IO.read(file_path)))
   end
+end
+
+CarrierWave::Uploader::Base.tap do |config|
+  config.add_config :sf_username
+  config.add_config :sf_password
+  config.add_config :sf_folder_id
+  config.add_config :sf_perform_upload
 end
