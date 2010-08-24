@@ -51,14 +51,15 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       @document_id = creation_response.createResponse.result[:id]
 
       upload_params = CarrierWave::Storage::Salesforce, :perform_upload, @uploader.username, @uploader.password, @document_id, file.path, @sf_binding
+      
       if @uploader.perform_upload
+        # if they set perform_upload, then call that
         @uploader.perform_upload[*upload_params]
       else
+        # otherwise, perform the upload right now
         klass, *upload_params = upload_params
         klass.send(*upload_params)
       end
-
-      @document_id
     end
     
     private
@@ -96,7 +97,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     sobj << 'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << entity_name
     sobj << 'Id   { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << id if id
     sobj += fields.select{|name,value| value }.to_a.flatten
-    [ :sObjects, sobj ]
+    [:sObjects, sobj]
   end
 
   def self.login(user, pass)
