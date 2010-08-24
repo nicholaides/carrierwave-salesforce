@@ -67,7 +67,7 @@ describe CarrierWave::Storage::Salesforce do
   end
   
   it "should add configuration to the uploader" do
-    CarrierWave::Uploader::Base.configure do |config|
+    CarrierWave.configure do |config|
       config.sf_username       = "user"
       config.sf_password       = "pass"
       config.sf_folder_id      = "folder"
