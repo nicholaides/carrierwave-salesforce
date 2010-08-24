@@ -5,9 +5,16 @@ require 'rforce'
 
 class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   class File
+    class DocumentNotFound < Exception
+    end
+      
     def initialize(uploader, document_id=nil)
       @uploader    = uploader
       @document_id = document_id
+    end
+    
+    def document_id
+      @document_id
     end
     
     def file_name
@@ -19,15 +26,13 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       @uploader.folder_id
     end
     
-    # Downloads and reads the file from SF
     def read
       download  if @body.nil?
       @body
     end
     
-    # Delete the file from SF
     def delete
-      
+      CarrierWave::Storage::Salesforce.delete(@uploader, document_id)
     end
     
     def store(file)
@@ -67,6 +72,9 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }', "Document",
       :ids, document_id
     ])
+    if retrieve_response[:retrieveResponse][:result].nil?
+      raise CarrierWave::Storage::Salesforce::File::DocumentNotFound
+    end
     
     body = Base64.decode64(retrieve_response[:retrieveResponse][:result][:Body])
     file_name = retrieve_response[:retrieveResponse][:result][:Name]
@@ -96,6 +104,13 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     document_id
   end
 
+  def self.delete(uploader, document_id)
+    sf_binding = login(uploader.username, uploader.password)
+    response   = sf_binding.delete [:id, document_id]
+    
+    response[:deleteResponse][:result][:success] == "true"
+  end
+  
   def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
     sf_binding ||= login(user, pass)
     sf_binding.update sobject("Document", document_id, :Body => Base64.encode64(IO.read(file_path)))
