@@ -36,10 +36,34 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     end
     
     def store(file)
-      @document_id = CarrierWave::Storage::Salesforce.upload(file, @uploader)
+      login
+      
+      blank_document = CarrierWave::Storage::Salesforce.sobject("Document", nil,
+        :Body     => Base64.encode64("waiting for upload..."),
+        :Type     => ::File.extname(@uploader.store_path),
+        :Name     => ::File.basename(@uploader.store_path),
+        :FolderId => @uploader.folder_id
+      )
+      creation_response = @sf_binding.create(blank_document)
+
+      @document_id = creation_response.createResponse.result[:id]
+
+      upload_params = CarrierWave::Storage::Salesforce, :perform_upload, @uploader.username, @uploader.password, @document_id, file.path, @sf_binding
+      if @uploader.perform_upload
+        @uploader.perform_upload[*upload_params]
+      else
+        klass, *upload_params = upload_params
+        klass.send(*upload_params)
+      end
+
+      @document_id
     end
     
     private
+      def login
+        @sf_binding ||= CarrierWave::Storage::Salesforce.login(@uploader.username, @uploader.password)
+      end
+    
       def download
         @body, @file_name = CarrierWave::Storage::Salesforce.download(@document_id, @uploader)
       end
@@ -82,29 +106,6 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     end
 
     [Base64.decode64(result.Body), result.Name]
-  end
-
-  def self.upload(file, uploader)
-    sf_binding = login(uploader.username, uploader.password)
-
-    blank_document = sobject("Document", nil,
-      :Body     => Base64.encode64("waiting for upload..."),
-      :Type     => ::File.extname(uploader.store_path),
-      :Name     => ::File.basename(uploader.store_path),
-      :FolderId => uploader.folder_id
-    )
-    creation_response = sf_binding.create(blank_document)
-
-    document_id = creation_response.createResponse.result[:id]
-
-    upload_params = :perform_upload, uploader.username, uploader.password, document_id, file.path, sf_binding
-    if uploader.perform_upload
-      uploader.perform_upload[self, *upload_params]
-    else
-      send(*upload_params)
-    end
-    
-    document_id
   end
 
   def self.delete(uploader, document_id)
