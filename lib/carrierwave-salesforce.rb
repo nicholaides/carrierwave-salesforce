@@ -78,7 +78,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
 
     blank_document = sobject("Document", nil,
       :Body     => Base64.encode64("waiting for upload..."),
-      :Type     => 'pdf',
+      :Type     => ::File.extname(uploader.store_path),
       :Name     => ::File.basename(uploader.store_path),
       :FolderId => uploader.folder_id
     )
