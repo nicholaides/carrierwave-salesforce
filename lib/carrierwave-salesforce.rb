@@ -82,9 +82,9 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   end
   
   def store!(file)
-    sf_file = CarrierWave::Storage::Salesforce::File.new(uploader)
-    sf_file.store(file)
-    sf_file
+    File.new(uploader).tap do |sf_file|
+      sf_file.store(file)
+    end
   end
   
   def retrieve!(document_id)
@@ -100,9 +100,9 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   end
 
   def self.login(user, pass)
-    sf_binding = RForce::Binding.new('https://www.salesforce.com/services/Soap/u/19.0', nil)
-    sf_binding.login(user, pass)
-    sf_binding
+    RForce::Binding.new('https://www.salesforce.com/services/Soap/u/19.0', nil).tap do |sf_binding|
+      sf_binding.login(user, pass)
+    end
   end
 
   def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
