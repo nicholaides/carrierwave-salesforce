@@ -76,13 +76,12 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }', "Document",
       :ids, document_id
     ])
-    if retrieve_response[:retrieveResponse][:result].nil?
+    result = retrieve_response.retrieveResponse.result
+    if result.nil?
       raise CarrierWave::Storage::Salesforce::File::DocumentNotFound
     end
-    
-    body = Base64.decode64(retrieve_response[:retrieveResponse][:result][:Body])
-    file_name = retrieve_response[:retrieveResponse][:result][:Name]
-    [body, file_name]
+
+    [Base64.decode64(result.Body), result.Name]
   end
 
   def self.upload(file, uploader)
@@ -96,7 +95,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     )
     creation_response = sf_binding.create(blank_document)
 
-    document_id = creation_response[:createResponse][:result][:id]
+    document_id = creation_response.createResponse.result[:id]
 
     upload_params = :perform_upload, uploader.username, uploader.password, document_id, file.path, sf_binding
     if uploader.perform_upload
@@ -112,7 +111,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     sf_binding = login(uploader.username, uploader.password)
     response   = sf_binding.delete [:id, document_id]
     
-    response[:deleteResponse][:result][:success] == "true"
+    response.deleteResponse.result.success == "true"
   end
   
   def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
