@@ -67,7 +67,17 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       end
     
       def download
-        @body, @file_name = CarrierWave::Storage::Salesforce.download(@document_id, @uploader)
+        login
+        
+        retrieve_response = @sf_binding.retrieve([
+          :fieldList, "Body, Name",
+          'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }', "Document",
+          :ids, document_id
+        ])
+        
+        result     = retrieve_response.retrieveResponse.result  or raise DocumentNotFound
+        @body      = Base64.decode64(result.Body)
+        @file_name = result.Name
       end
   end
   
@@ -93,21 +103,6 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     sf_binding = RForce::Binding.new('https://www.salesforce.com/services/Soap/u/19.0', nil)
     sf_binding.login(user, pass)
     sf_binding
-  end
-
-  def self.download(document_id, uploader)
-    sf_binding = login(uploader.username, uploader.password)
-    retrieve_response = sf_binding.retrieve([
-      :fieldList, "Body, Name",
-      'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }', "Document",
-      :ids, document_id
-    ])
-    result = retrieve_response.retrieveResponse.result
-    if result.nil?
-      raise CarrierWave::Storage::Salesforce::File::DocumentNotFound
-    end
-
-    [Base64.decode64(result.Body), result.Name]
   end
 
   def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
