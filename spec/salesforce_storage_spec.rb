@@ -24,6 +24,13 @@ describe CarrierWave::Storage::Salesforce do
     @sf_file.file_name.should == File.basename(@file.path)
   end
   
+  it "should retrieve a file" do
+    @sf_file = @storage.store!(@file)
+    retrieved_file = @storage.retrieve!(@sf_file.document_id)
+    retrieved_file.read.should == @file.read
+    retrieved_file.file_name.should == File.basename(@file.path)
+  end
+  
   describe "defer uploading to the #perform_upload setting" do
     context "uploading immediately" do
       it "should upload immediately" do

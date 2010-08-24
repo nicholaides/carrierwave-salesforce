@@ -51,6 +51,10 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     sf_file
   end
   
+  def retrieve!(document_id)
+    CarrierWave::Storage::Salesforce::File.new(uploader, document_id)
+  end
+  
   def self.sobject(entity_name, id, fields=[])
     sobj = []
     sobj << 'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << entity_name
