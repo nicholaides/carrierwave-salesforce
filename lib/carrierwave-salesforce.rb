@@ -32,7 +32,9 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     end
     
     def delete
-      CarrierWave::Storage::Salesforce.delete(@uploader, document_id)
+      login
+      
+      @sf_binding.delete([:id, document_id]).deleteResponse.result.success == "true"
     end
     
     def store(file)
@@ -108,13 +110,6 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     [Base64.decode64(result.Body), result.Name]
   end
 
-  def self.delete(uploader, document_id)
-    sf_binding = login(uploader.username, uploader.password)
-    response   = sf_binding.delete [:id, document_id]
-    
-    response.deleteResponse.result.success == "true"
-  end
-  
   def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
     sf_binding ||= login(user, pass)
     sf_binding.update sobject("Document", document_id, :Body => Base64.encode64(IO.read(file_path)))
