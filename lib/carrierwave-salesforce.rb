@@ -91,6 +91,10 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   end
 end
 
+CarrierWave.configure do |config|
+  config.storage_engines[:salesforce] = "CarrierWave::Storage::Salesforce"
+end
+
 CarrierWave::Uploader::Base.tap do |base|
   base.add_config :sf_username
   base.add_config :sf_password
