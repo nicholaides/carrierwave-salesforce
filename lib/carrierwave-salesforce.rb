@@ -5,8 +5,7 @@ require 'rforce'
 
 class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   class File
-    class DocumentNotFound < Exception
-    end
+    class DocumentNotFound < Exception; end
       
     def initialize(uploader, document_id=nil)
       @uploader    = uploader
@@ -40,8 +39,8 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
     def store(file)
       login
       
-      blank_document = CarrierWave::Storage::Salesforce.sobject("Document", nil,
-        :Body     => Base64.encode64("waiting for upload..."),
+      blank_document = sobject("Document", nil,
+        :Body     => Base64.encode64(IO.read(file.path)),
         :Type     => ::File.extname(@uploader.store_path),
         :Name     => ::File.basename(@uploader.store_path),
         :FolderId => @uploader.sf_folder_id
@@ -49,22 +48,13 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       creation_response = @sf_binding.create(blank_document)
 
       @document_id = creation_response.createResponse.result[:id]
-
-      upload_params = [CarrierWave::Storage::Salesforce, :perform_upload, @uploader.sf_username, @uploader.sf_password, @document_id, file.path, @sf_binding]
-      
-      if @uploader.sf_perform_upload
-        # if they set perform_upload, then call that
-        @uploader.sf_perform_upload[*upload_params]
-      else
-        # otherwise, perform the upload right now
-        klass, *upload_params = upload_params
-        klass.send(*upload_params)
-      end
     end
     
     private
       def login
-        @sf_binding ||= CarrierWave::Storage::Salesforce.login(@uploader.sf_username, @uploader.sf_password)
+        @sf_binding ||= RForce::Binding.new('https://www.salesforce.com/services/Soap/u/19.0', nil).tap do |sf_binding|
+          sf_binding.login(@uploader.sf_username, @uploader.sf_password)
+        end
       end
     
       def download
@@ -80,6 +70,14 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
         @body      = Base64.decode64(result.Body)
         @file_name = result.Name
       end
+      
+      def sobject(entity_name, id, fields=[])
+        sobj = []
+        sobj << 'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << entity_name
+        sobj << 'Id   { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << id if id
+        sobj += fields.select{|name,value| value }.to_a.flatten
+        [:sObjects, sobj]
+      end
   end
   
   def store!(file)
@@ -89,26 +87,7 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   end
   
   def retrieve!(document_id)
-    CarrierWave::Storage::Salesforce::File.new(uploader, document_id)
-  end
-  
-  def self.sobject(entity_name, id, fields=[])
-    sobj = []
-    sobj << 'type { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << entity_name
-    sobj << 'Id   { :xmlns => "urn:sobject.partner.soap.sforce.com" }' << id if id
-    sobj += fields.select{|name,value| value }.to_a.flatten
-    [:sObjects, sobj]
-  end
-
-  def self.login(user, pass)
-    RForce::Binding.new('https://www.salesforce.com/services/Soap/u/19.0', nil).tap do |sf_binding|
-      sf_binding.login(user, pass)
-    end
-  end
-
-  def self.perform_upload(user, pass, document_id, file_path, sf_binding=nil)
-    sf_binding ||= login(user, pass)
-    sf_binding.update sobject("Document", document_id, :Body => Base64.encode64(IO.read(file_path)))
+    File.new(uploader, document_id)
   end
 end
 
@@ -116,5 +95,4 @@ CarrierWave::Uploader::Base.tap do |base|
   base.add_config :sf_username
   base.add_config :sf_password
   base.add_config :sf_folder_id
-  base.add_config :sf_perform_upload
 end

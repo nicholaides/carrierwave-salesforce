@@ -12,7 +12,6 @@ describe CarrierWave::Storage::Salesforce do
       config.sf_username       = ENV['SF_USERNAME']
       config.sf_password       = ENV['SF_PASSWORD']
       config.sf_folder_id      = ENV['SF_FOLDERID']
-      config.sf_perform_upload = nil
     end
     @uploader = CarrierWave::Uploader::Base.new
     @uploader.stub! :store_path => 'uploads/somefile/test.txt'
@@ -22,7 +21,7 @@ describe CarrierWave::Storage::Salesforce do
   end
   
   after do
-    @sf_file.delete if @sf_file
+    @sf_file.delete  if @sf_file
   end
   
   it "should should store and retrieve the file from Salesforce" do
@@ -31,42 +30,13 @@ describe CarrierWave::Storage::Salesforce do
     @sf_file.file_name.should == File.basename(@file.path)
   end
   
-  it "should retrieve a file" do
+  it "should retrieve a file by its document_id" do
     @sf_file = @storage.store!(@file)
     retrieved_file = @storage.retrieve!(@sf_file.document_id)
     retrieved_file.read.should == @file.read
     retrieved_file.file_name.should == File.basename(@file.path)
   end
-  
-  describe "defer uploading to the #perform_upload setting" do
-    context "uploading immediately" do
-      it "should upload immediately" do
-        CarrierWave.configure do |config|
-          config.sf_perform_upload =
-            lambda do |uploader_class, perform_upload_method, username, password, document_id, file_path, sf_binding|
-              uploader_class.send(perform_upload_method, username, password, document_id, file_path, sf_binding)
-            end
-        end
-        
-        @sf_file = @storage.store!(@file)
-        @sf_file.read.should == @file.read
-        @sf_file.file_name.should == File.basename(@file.path)
-      end
-    end
-    
-    context "not uploading immediately" do
-      it "should not upload immediately" do
-        CarrierWave.configure do |config|
-          config.sf_perform_upload = lambda{}
-        end
-        
-        @sf_file = @storage.store!(@file)
-        @sf_file.read.should == "waiting for upload..."
-        @sf_file.file_name.should == File.basename(@file.path)
-      end
-    end
-  end
-
+      
   it "should delete a file" do
     @sf_file = @storage.store!(@file)
     @sf_file.delete.should == true
@@ -80,12 +50,10 @@ describe CarrierWave::Storage::Salesforce do
       config.sf_username       = "user"
       config.sf_password       = "pass"
       config.sf_folder_id      = "folder"
-      config.sf_perform_upload = lambda{}
       
       config.sf_username      .should == "user"
       config.sf_password      .should == "pass"
       config.sf_folder_id     .should == "folder"
-      config.sf_perform_upload.should == lambda{}
     end
   end
 end
