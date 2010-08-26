@@ -16,6 +16,10 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
       @document_id
     end
     
+    def identifier
+      document_id
+    end
+    
     def file_name
       download  if @file_name.nil?
       @file_name

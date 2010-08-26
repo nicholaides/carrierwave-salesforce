@@ -5,12 +5,12 @@
 
 Gem::Specification.new do |s|
   s.name = %q{carrierwave-salesforce}
-  s.version = "0.0.0"
+  s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Mike Nicholaides"]
-  s.date = %q{2010-08-23}
-  s.description = %q{Upload files to Salesforce as Document objects.}
+  s.date = %q{2010-08-26}
+  s.description = %q{Upload files to Salesforce as Document objects via CarrierWave.}
   s.email = %q{mike@ablegray.com}
   s.extra_rdoc_files = [
     "LICENSE",
@@ -23,8 +23,10 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
+     "carrierwave-salesforce.gemspec",
      "lib/carrierwave-salesforce.rb",
-     "spec/carrierwave-salesforce_spec.rb",
+     "spec/files/test.txt",
+     "spec/salesforce_storage_spec.rb",
      "spec/spec.opts",
      "spec/spec_helper.rb"
   ]
@@ -32,9 +34,9 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.6}
-  s.summary = %q{Upload files to Salesforce}
+  s.summary = %q{Upload files to Salesforce via CarrierWave}
   s.test_files = [
-    "spec/carrierwave-salesforce_spec.rb",
+    "spec/salesforce_storage_spec.rb",
      "spec/spec_helper.rb"
   ]
 
@@ -45,13 +47,16 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<rspec>, [">= 1.2.9"])
       s.add_runtime_dependency(%q<carrierwave>, [">= 0"])
+      s.add_runtime_dependency(%q<rforce>, [">= 0"])
     else
       s.add_dependency(%q<rspec>, [">= 1.2.9"])
       s.add_dependency(%q<carrierwave>, [">= 0"])
+      s.add_dependency(%q<rforce>, [">= 0"])
     end
   else
     s.add_dependency(%q<rspec>, [">= 1.2.9"])
     s.add_dependency(%q<carrierwave>, [">= 0"])
+    s.add_dependency(%q<rforce>, [">= 0"])
   end
 end
 
