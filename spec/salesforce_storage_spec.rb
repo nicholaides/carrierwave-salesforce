@@ -1,14 +1,21 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
+%w[SF_USERNAME SF_PASSWORD SF_FOLDERID].each do |setting|
+  if ENV[setting].blank?
+    raise "ENV[#{setting}] was blank, but is necessary. Set via: `export #{setting}='...'` from the command line."
+  end
+end
+
 describe CarrierWave::Storage::Salesforce do
   before do
-    @uploader = mock('an uploader',
-      :sf_username       => ENV['SF_USERNAME'],
-      :sf_password       => ENV['SF_PASSWORD'],
-      :sf_folder_id      => ENV['SF_FOLDERID'],
-      :store_path        => 'uploads/somefile/test.txt',
-      :sf_perform_upload => nil
-    )
+    CarrierWave.configure do |config|
+      config.sf_username       = ENV['SF_USERNAME']
+      config.sf_password       = ENV['SF_PASSWORD']
+      config.sf_folder_id      = ENV['SF_FOLDERID']
+      config.sf_perform_upload = nil
+    end
+    @uploader = CarrierWave::Uploader::Base.new
+    @uploader.stub! :store_path => 'uploads/somefile/test.txt'
     
     @storage = CarrierWave::Storage::Salesforce.new(@uploader)
     @file = CarrierWave::SanitizedFile.new(file_path('test.txt'))
@@ -34,12 +41,12 @@ describe CarrierWave::Storage::Salesforce do
   describe "defer uploading to the #perform_upload setting" do
     context "uploading immediately" do
       it "should upload immediately" do
-        @uploader.stub!(
-          :sf_perform_upload =>
+        CarrierWave.configure do |config|
+          config.sf_perform_upload =
             lambda do |uploader_class, perform_upload_method, username, password, document_id, file_path, sf_binding|
               uploader_class.send(perform_upload_method, username, password, document_id, file_path, sf_binding)
             end
-        )
+        end
         
         @sf_file = @storage.store!(@file)
         @sf_file.read.should == @file.read
@@ -49,7 +56,9 @@ describe CarrierWave::Storage::Salesforce do
     
     context "not uploading immediately" do
       it "should not upload immediately" do
-        @uploader.stub!(:sf_perform_upload => lambda{})
+        CarrierWave.configure do |config|
+          config.sf_perform_upload = lambda{}
+        end
         
         @sf_file = @storage.store!(@file)
         @sf_file.read.should == "waiting for upload..."

@@ -112,9 +112,9 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   end
 end
 
-CarrierWave::Uploader::Base.tap do |config|
-  config.add_config :sf_username
-  config.add_config :sf_password
-  config.add_config :sf_folder_id
-  config.add_config :sf_perform_upload
+CarrierWave::Uploader::Base.tap do |base|
+  base.add_config :sf_username
+  base.add_config :sf_password
+  base.add_config :sf_folder_id
+  base.add_config :sf_perform_upload
 end
