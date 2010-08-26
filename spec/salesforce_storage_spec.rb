@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 %w[SF_USERNAME SF_PASSWORD SF_FOLDERID].each do |setting|
   if ENV[setting].blank?
-    raise "ENV[#{setting}] was blank, but is necessary. Set via: `export #{setting}='...'` from the command line."
+    raise "ENV[#{setting}] was blank, but is required. Set via `export #{setting}='...'` from the command line."
   end
 end
 
