@@ -93,6 +93,10 @@ class CarrierWave::Storage::Salesforce < CarrierWave::Storage::Abstract
   def retrieve!(document_id)
     File.new(uploader, document_id)
   end
+  
+  def identifier
+    uploader.file.identifier
+  end
 end
 
 CarrierWave.configure do |config|

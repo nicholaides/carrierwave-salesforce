@@ -24,6 +24,16 @@ describe CarrierWave::Storage::Salesforce do
     @sf_file.delete  if @sf_file
   end
   
+  describe "#identifier" do
+    it "should return the identifier of the uploader's file" do
+      identifier = mock
+      @file.stub(:identifier => identifier)
+      @uploader.stub(:file => @file)
+      
+      @storage.identifier.should == identifier
+    end
+  end
+  
   it "should should store and retrieve the file from Salesforce" do
     @sf_file = @storage.store!(@file)
     @sf_file.read.should == @file.read
